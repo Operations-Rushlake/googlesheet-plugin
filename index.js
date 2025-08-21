@@ -28,37 +28,65 @@ const userTokens = {};
 // Step 1: Get auth URL
 app.get("/auth/url", (req, res) => {
   const url = oauth2Client.generateAuthUrl({
-    access_type: "offline",
+    access_type: "offline",   // ensures refresh_token
     scope: SCOPES,
-    prompt: "consent",
+    prompt: "consent",        // force to return refresh_token at least once
   });
   res.json({ url });
 });
 
 // Step 2: OAuth callback
 app.get("/auth/callback", async (req, res) => {
-  const { code, user } = req.query; // pass ?user=someId when redirecting
-  const { tokens } = await oauth2Client.getToken(code);
+  const { code, user } = req.query;
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
 
-  userTokens[user || "default"] = tokens; // Save per user
+    // If refresh_token is missing, keep the old one
+    if (!tokens.refresh_token && userTokens[user || "default"]) {
+      tokens.refresh_token = userTokens[user || "default"].refresh_token;
+    }
 
-  res.json({ message: "Authentication successful. You can now use the plugin." });
+    // Save per user
+    userTokens[user || "default"] = tokens;
+
+    res.send("✅ Authentication successful! You can now return to TypingMind.");
+  } catch (err) {
+    console.error("OAuth callback error:", err);
+    res.status(500).json({ error: "Authentication failed" });
+  }
 });
+
+// Helper: Ensure access token is fresh
+async function ensureFreshToken(user) {
+  const tokens = userTokens[user];
+  if (!tokens) throw new Error("User not authenticated");
+
+  oauth2Client.setCredentials(tokens);
+
+  const newToken = await oauth2Client.getAccessToken();
+  if (newToken.token) {
+    userTokens[user].access_token = newToken.token;
+  }
+  return oauth2Client;
+}
 
 // Step 3: List spreadsheets in Drive
 app.get("/drive/files", async (req, res) => {
   const user = req.query.user || "default";
   if (!userTokens[user]) return res.status(401).json({ error: "User not authenticated" });
 
-  oauth2Client.setCredentials(userTokens[user]);
-
-  const drive = google.drive({ version: "v3", auth: oauth2Client });
-  const result = await drive.files.list({
-    q: "mimeType='application/vnd.google-apps.spreadsheet'",
-    fields: "files(id, name)",
-  });
-
-  res.json(result.data.files);
+  try {
+    const client = await ensureFreshToken(user);
+    const drive = google.drive({ version: "v3", auth: client });
+    const result = await drive.files.list({
+      q: "mimeType='application/vnd.google-apps.spreadsheet'",
+      fields: "files(id, name)",
+    });
+    res.json(result.data.files);
+  } catch (err) {
+    console.error("Drive error:", err);
+    res.status(500).json({ error: "Failed to list files" });
+  }
 });
 
 // Step 4: Read from a sheet
@@ -66,15 +94,18 @@ app.post("/sheets/read", async (req, res) => {
   const { user, fileId, range } = req.body;
   if (!userTokens[user || "default"]) return res.status(401).json({ error: "User not authenticated" });
 
-  oauth2Client.setCredentials(userTokens[user || "default"]);
-
-  const sheets = google.sheets({ version: "v4", auth: oauth2Client });
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: fileId,
-    range,
-  });
-
-  res.json(response.data);
+  try {
+    const client = await ensureFreshToken(user || "default");
+    const sheets = google.sheets({ version: "v4", auth: client });
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: fileId,
+      range,
+    });
+    res.json(response.data);
+  } catch (err) {
+    console.error("Sheets read error:", err);
+    res.status(500).json({ error: "Failed to read sheet" });
+  }
 });
 
 // Step 5: Write to a sheet
@@ -82,17 +113,20 @@ app.post("/sheets/write", async (req, res) => {
   const { user, fileId, range, values } = req.body;
   if (!userTokens[user || "default"]) return res.status(401).json({ error: "User not authenticated" });
 
-  oauth2Client.setCredentials(userTokens[user || "default"]);
-
-  const sheets = google.sheets({ version: "v4", auth: oauth2Client });
-  const response = await sheets.spreadsheets.values.update({
-    spreadsheetId: fileId,
-    range,
-    valueInputOption: "RAW",
-    requestBody: { values },
-  });
-
-  res.json(response.data);
+  try {
+    const client = await ensureFreshToken(user || "default");
+    const sheets = google.sheets({ version: "v4", auth: client });
+    const response = await sheets.spreadsheets.values.update({
+      spreadsheetId: fileId,
+      range,
+      valueInputOption: "RAW",
+      requestBody: { values },
+    });
+    res.json(response.data);
+  } catch (err) {
+    console.error("Sheets write error:", err);
+    res.status(500).json({ error: "Failed to write sheet" });
+  }
 });
 
 // Start server
