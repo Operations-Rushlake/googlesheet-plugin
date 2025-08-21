@@ -1,0 +1,17 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Google Sheets Plugin",
+  "name_for_model": "gsheets_plugin",
+  "description_for_human": "Read, write, and manage your Google Sheets directly from TypingMind.",
+  "description_for_model": "Plugin for interacting with Google Sheets via Google Drive and Sheets API. Supports authentication, listing spreadsheet files, reading cell ranges, and writing values.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://googlesheet-plugin.onrender.com/openapi.yaml"
+  },
+  "logo_url": "https://www.gstatic.com/images/branding/product/1x/sheets_48dp.png",
+  "contact_email": "support@example.com",
+  "legal_info_url": "https://example.com/legal"
+}

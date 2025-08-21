@@ -1,0 +1,129 @@
+openapi: 3.0.1
+info:
+  title: Google Sheets Plugin API
+  description: API for interacting with Google Sheets and Drive.
+  version: "1.0.0"
+servers:
+  - url: https://googlesheet-plugin.onrender.com
+paths:
+  /auth/url:
+    get:
+      summary: Get Google OAuth2 URL
+      operationId: getAuthUrl
+      responses:
+        "200":
+          description: Auth URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+
+  /auth/callback:
+    get:
+      summary: OAuth2 Callback
+      operationId: authCallback
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: user
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /drive/files:
+    get:
+      summary: List spreadsheets in Google Drive
+      operationId: listDriveFiles
+      parameters:
+        - in: query
+          name: user
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of spreadsheets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+
+  /sheets/read:
+    post:
+      summary: Read values from a sheet
+      operationId: readSheet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: string
+                fileId:
+                  type: string
+                range:
+                  type: string
+      responses:
+        "200":
+          description: Sheet values
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /sheets/write:
+    post:
+      summary: Write values to a sheet
+      operationId: writeSheet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: string
+                fileId:
+                  type: string
+                range:
+                  type: string
+                values:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: string
+      responses:
+        "200":
+          description: Write result
+          content:
+            application/json:
+              schema:
+                type: object
