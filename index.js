@@ -1,8 +1,20 @@
 import express from "express";
 import { google } from "googleapis";
 import cors from "cors";
+import path from 'path'; // <-- ADD: Import the 'path' module
+import { fileURLToPath } from 'url'; // <-- ADD: Import for ES modules __dirname equivalent
 
 const app = express();
+
+// --- START: NEW STATIC FILE SERVING CONFIGURATION ---
+// Get the directory name of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Instruct Express to serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+// --- END: NEW STATIC FILE SERVING CONFIGURATION ---
+
 app.use(cors());
 app.use(express.json());
 
