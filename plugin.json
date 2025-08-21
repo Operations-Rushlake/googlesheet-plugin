@@ -1,86 +1,25 @@
 {
-  "id": "googlesheet_plugin_001",
-  "code": "async function googlesheet_plugin_001({ spreadsheetId, range, values, title, action }, context) {\n  if (action === 'read') {\n    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`, {\n      headers: {\n        Authorization: 'Bearer {{OAUTH_PLUGIN_ACCESS_TOKEN}}'\n      }\n    });\n    return await res.json();\n\n  } else if (action === 'write') {\n    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`, {\n      method: 'PUT',\n      headers: {\n        Authorization: 'Bearer {{OAUTH_PLUGIN_ACCESS_TOKEN}}',\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({ values })\n    });\n    return await res.json();\n\n  } else if (action === 'create') {\n    if (!title) throw new Error('Missing title for new spreadsheet');\n    const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {\n      method: 'POST',\n      headers: {\n        Authorization: 'Bearer {{OAUTH_PLUGIN_ACCESS_TOKEN}}',\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({ properties: { title } })\n    });\n    return await res.json();\n\n  } else {\n    throw new Error('Invalid action. Use \"read\", \"write\", or \"create\"');\n  }\n}",
-  "icon": "https://www.gstatic.com/images/branding/product/1x/sheets_48dp.png",
-  "uuid": "a312bac6-10f1-4555-a06b-37dedaff603b",
-  "emoji": "🧩",
-  "title": "Google Sheets Plugin",
-  "system": false,
-  "iconURL": "https://www.gstatic.com/images/branding/product/1x/sheets_48dp.png",
-  "disabled": false,
-  "syncedAt": null,
-  "mcpDetails": null,
-  "openaiSpec": {
-    "name": "googlesheet_plugin_001",
-    "parameters": {
-      "type": "object",
-      "required": ["action"],
-      "properties": {
-        "range": {
-          "type": "string",
-          "description": "The A1 notation of the range to read or update (e.g. 'Sheet1!A1:C10')"
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the new spreadsheet (required if action=create)"
-        },
-        "action": {
-          "enum": ["read", "write", "create"],
-          "type": "string",
-          "description": "Whether to read, write, or create a sheet"
-        },
-        "values": {
-          "type": "array",
-          "items": {
-            "type": "array",
-            "items": { "type": "string" }
-          },
-          "description": "2D array of values to update (required if writing data)"
-        },
-        "spreadsheetId": {
-          "type": "string",
-          "description": "The ID of the Google Sheet (not needed if action=create)"
-        }
-      }
-    },
-    "description": "Interact with Google Sheets using OAuth2.0 authentication"
-  },
-  "outputType": "respond_to_ai",
-  "oauthConfig": {
-    "prompt": "consent",
-    "scopes": "openid profile email https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets",
-    "tokenURL": "https://oauth2.googleapis.com/token",
-    "accessType": "offline",
-    "contentType": "json",
-    "authorizationURL": "https://accounts.google.com/o/oauth2/v2/auth"
-  },
-  "userSettings": [
-    {
-      "name": "OAUTH_CLIENT_ID",
-      "label": "OAuth Client ID",
-      "required": true,
-      "description": "Your Google OAuth 2.0 Client ID"
-    },
-    {
-      "name": "OAUTH_CLIENT_SECRET",
-      "type": "password",
-      "label": "OAuth Client Secret",
-      "required": true,
-      "description": "Your Google OAuth 2.0 Client Secret"
-    },
-    {
-      "name": "OAUTH_REDIRECT_URI",
-      "label": "OAuth Redirect URI",
-      "required": true,
-      "description": "The redirect URI configured in your Google Cloud OAuth2 credentials"
+  "schema_version": "v1",
+  "name_for_human": "Google Sheets",
+  "name_for_model": "google_sheets",
+  "description_for_human": "Interact with Google Sheets. You can read, write, or create sheets.",
+  "description_for_model": "A plugin for interacting with Google Sheets using OAuth. Can read a range, write values to a range, or create a new spreadsheet.",
+  "auth": {
+    "type": "oauth",
+    "client_url": "https://<YOUR_OAUTH_CLIENT_ID>.apps.googleusercontent.com",
+    "scope": "https://www.googleapis.com/auth/spreadsheets",
+    "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth",
+    "authorization_content_type": "application/json",
+    "verification_tokens": {
+      "openai": "A_VERIFICATION_TOKEN_YOU_PROVIDE_TO_OPENAI"
     }
-  ],
-  "isServerPlugin": true,
-  "overviewMarkdown": "## Google Sheets Plugin\n\nRead, update, or create Google Sheets using OAuth2 authentication.",
-  "turnedOnByDefault": true,
-  "authenticationType": "AUTH_TYPE_OAUTH",
-  "implementationType": "javascript",
-  "dynamicContextEndpoints": [],
-  "sharedOAuthConnectionID": null
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://googlesheet-plugin.onrender.com/openapi.yaml",
+    "is_user_authenticated": false
+  },
+  "logo_url": "https://www.gstatic.com/images/branding/product/1x/sheets_48dp.png",
+  "contact_email": "support@example.com",
+  "legal_info_url": "http://www.example.com/legal"
 }
-
