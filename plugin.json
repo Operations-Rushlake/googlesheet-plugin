@@ -1,256 +1,86 @@
 {
-    "id": "generate_excel_file",
-    "uuid": "6b522118-b0d1-4357-9b06-3c54a98e28d9",
-    "emoji": "🧩",
-    "title": "Excel Generator",
-    "system": false,
-    "iconURL": "https://custom.typingmind.com/assets/plugins/microsoft-excel.webp",
-    "disabled": false,
-    "syncedAt": null,
-    "httpAction": {
-        "id": "1958d5ef-feb1-458a-8bc2-8f77870de439",
-        "url": "{pluginServer}/excel-generator/generate",
-        "name": "",
-        "method": "POST",
-        "hasBody": true,
-        "hasHeaders": true,
-        "requestBody": "\n{\n    \"sheetsData\": {sheetsData},\n    \"excelConfigs\": {\n       \"fontFamily\": \"{fontFamily}\",\n       \"fontSize\": {fontSize},\n       \"headerFontSize\": {headerFontSize},\n       \"tableTitleFontSize\": {tableTitleFontSize},\n       \"borderStyle\": \"{borderStyle}\",\n       \"autoFitColumnWidth\": {autoFitColumnWidth},\n       \"autoFilter\": {autoFilter},\n       \"wrapText\": {wrapText}      \n   }\n}",
-        "requestHeaders": "{\n      \"Content-Type\": \"application/json\"\n}"
-    },
-    "openaiSpec": {
-        "name": "generate_excel_file",
-        "parameters": {
-            "type": "object",
-            "required": [
-                "sheetsData"
-            ],
-            "properties": {
-                "sheetsData": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "required": [
-                            "sheetName",
-                            "tables"
-                        ],
-                        "properties": {
-                            "tables": {
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "required": [
-                                        "startCell",
-                                        "columns",
-                                        "rows"
-                                    ],
-                                    "properties": {
-                                        "rows": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "object",
-                                                    "required": [
-                                                        "type",
-                                                        "value"
-                                                    ],
-                                                    "properties": {
-                                                        "type": {
-                                                            "enum": [
-                                                                "static_value",
-                                                                "formula"
-                                                            ],
-                                                            "type": "string",
-                                                            "description": "Indicates whether the cell contains a static value or a formula."
-                                                        },
-                                                        "value": {
-                                                            "type": "string",
-                                                            "description": "The actual value or formula for the cell. If a formula, do not start with '='. Ensure that any cell ranges used in the formula must not include the header row and title row. For example, if the table starts at A1 with a title in row 1 and header in row 2, a valid formula would be 'SUM(A3:A10)'. When referencing another sheet, include the sheet name followed by an exclamation mark, and use single quotes around the sheet name if it contains spaces. For example, use 'Sheet 2'!A1:B2 to reference a range in a sheet with spaces in its name. If 'type' is 'static_value', do not include percent or currency signs as these are defined in the column format. Avoid creating circular references where a formula directly or indirectly references its own cell."
-                                                        }
-                                                    },
-                                                    "description": "Each cell in a row contains a type ('static_value' or 'formula') and its corresponding value."
-                                                },
-                                                "description": "Each row is an array of cells. The number of cells in each row must equal the defined columns length, and all rows must have the same length."
-                                            },
-                                            "description": "Array of rows in the table, where each row is an array of cells."
-                                        },
-                                        "title": {
-                                            "type": "string",
-                                            "example": "Q1 Sales Data",
-                                            "description": "The title of the table, which will be displayed in the first row."
-                                        },
-                                        "columns": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "required": [
-                                                    "name",
-                                                    "type"
-                                                ],
-                                                "properties": {
-                                                    "name": {
-                                                        "type": "string",
-                                                        "example": "Product Name",
-                                                        "description": "The name of the column."
-                                                    },
-                                                    "type": {
-                                                        "enum": [
-                                                            "string",
-                                                            "number",
-                                                            "boolean",
-                                                            "percent",
-                                                            "currency",
-                                                            "date"
-                                                        ],
-                                                        "type": "string",
-                                                        "example": "string",
-                                                        "description": "The data type of the column."
-                                                    },
-                                                    "format": {
-                                                        "type": "string",
-                                                        "example": "$#,##0",
-                                                        "description": "The format of the column (e.g., '0.00%', '$#,##0', etc.)."
-                                                    }
-                                                }
-                                            },
-                                            "description": "The list of columns in the table, each with a name, type, and optional format."
-                                        },
-                                        "startCell": {
-                                            "type": "string",
-                                            "example": "A1",
-                                            "description": "The starting cell (e.g., 'A1') where the table will begin."
-                                        },
-                                        "skipHeader": {
-                                            "type": "boolean",
-                                            "example": false,
-                                            "description": "Whether to skip the header row for this table."
-                                        }
-                                    }
-                                },
-                                "description": "The tables to include in the sheet."
-                            },
-                            "sheetName": {
-                                "type": "string",
-                                "example": "Sales Data",
-                                "description": "The name of the sheet to be created in the Excel file."
-                            }
-                        }
-                    },
-                    "description": "An array of sheet data, where each sheet contains a name and an array of tables to generate."
-                }
-            }
+  "id": "googlesheet_plugin_001",
+  "code": "async function googlesheet_plugin_001({ spreadsheetId, range, values, title, action }, context) {\n  if (action === 'read') {\n    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`, {\n      headers: {\n        Authorization: 'Bearer {{OAUTH_PLUGIN_ACCESS_TOKEN}}'\n      }\n    });\n    return await res.json();\n\n  } else if (action === 'write') {\n    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`, {\n      method: 'PUT',\n      headers: {\n        Authorization: 'Bearer {{OAUTH_PLUGIN_ACCESS_TOKEN}}',\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({ values })\n    });\n    return await res.json();\n\n  } else if (action === 'create') {\n    if (!title) throw new Error('Missing title for new spreadsheet');\n    const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {\n      method: 'POST',\n      headers: {\n        Authorization: 'Bearer {{OAUTH_PLUGIN_ACCESS_TOKEN}}',\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({ properties: { title } })\n    });\n    return await res.json();\n\n  } else {\n    throw new Error('Invalid action. Use \"read\", \"write\", or \"create\"');\n  }\n}",
+  "icon": "https://www.gstatic.com/images/branding/product/1x/sheets_48dp.png",
+  "uuid": "a312bac6-10f1-4555-a06b-37dedaff603b",
+  "emoji": "🧩",
+  "title": "Google Sheets Plugin",
+  "system": false,
+  "iconURL": "https://www.gstatic.com/images/branding/product/1x/sheets_48dp.png",
+  "disabled": false,
+  "syncedAt": null,
+  "mcpDetails": null,
+  "openaiSpec": {
+    "name": "googlesheet_plugin_001",
+    "parameters": {
+      "type": "object",
+      "required": ["action"],
+      "properties": {
+        "range": {
+          "type": "string",
+          "description": "The A1 notation of the range to read or update (e.g. 'Sheet1!A1:C10')"
         },
-        "description": "Generate an Excel file (.xlsx) and return the URL for downloading it. If the download URL is not present in the response, inform the user that the Excel file could not be generated. Prompt the user to verify that the correct plugin server URL is being used."
-    },
-    "outputType": "respond_to_ai",
-    "oauthConfig": null,
-    "userSettings": [
-        {
-            "name": "pluginServer",
-            "label": "Plugin Server",
-            "required": true,
-            "description": "The URL of the plugin server. For more details, refer to the documentation: https://docs.typingmind.com/plugins/plugins-server",
-            "placeholder": "https://...."
+        "title": {
+          "type": "string",
+          "description": "Title of the new spreadsheet (required if action=create)"
         },
-        {
-            "name": "fontFamily",
-            "type": "enum",
-            "label": "Font Family",
-            "values": [
-                "Calibri",
-                "Arial",
-                "Courier New",
-                "Georgia",
-                "Helvetica",
-                "Impact",
-                "Lucida Console",
-                "Tahoma",
-                "Times New Roman",
-                "Trebuchet MS",
-                "Verdana",
-                "Comic Sans MS",
-                "Franklin Gothic Medium",
-                "Century Gothic",
-                "Gill Sans",
-                "Garamond",
-                "Palatino Linotype",
-                "Segoe UI",
-                "Book Antiqua",
-                "Symbol",
-                "Monospace",
-                "Webdings",
-                "Wingdings"
-            ],
-            "default": "Calibri",
-            "description": "Select the font family for the Excel file. The default is Calibri."
+        "action": {
+          "enum": ["read", "write", "create"],
+          "type": "string",
+          "description": "Whether to read, write, or create a sheet"
         },
-        {
-            "name": "fontSize",
-            "type": "number",
-            "label": "Font Size",
-            "description": "Specify the font size for the Excel file. The default is 11 pt.",
-            "placeholder": "11"
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "description": "2D array of values to update (required if writing data)"
         },
-        {
-            "name": "headerFontSize",
-            "type": "number",
-            "label": "Header Font Size",
-            "description": "Set the font size for table headers in the Excel file. The default is 11 pt.",
-            "placeholder": "11"
-        },
-        {
-            "name": "tableTitleFontSize",
-            "type": "number",
-            "label": "Table Title Font Size",
-            "description": "Set the font size for the titles of each table in the Excel file. The default is 13 pt.",
-            "placeholder": "13"
-        },
-        {
-            "name": "borderStyle",
-            "type": "enum",
-            "label": "Border Style",
-            "values": [
-                "none",
-                "thin",
-                "double",
-                "dashed",
-                "thick"
-            ],
-            "default": "none",
-            "description": "Choose the border style for tables in the Excel file. The default is 'none.'"
-        },
-        {
-            "name": "autoFitColumnWidth",
-            "type": "enum",
-            "label": "Enable Auto Fit Column Width",
-            "values": [
-                "true",
-                "false"
-            ],
-            "description": "Enable or disable automatic adjustment of column widths to fit the content. The default is 'true.'"
-        },
-        {
-            "name": "autoFilter",
-            "type": "enum",
-            "label": "Enable Auto Filter",
-            "values": [
-                "false",
-                "true"
-            ],
-            "description": "Enable or disable the auto filter option for table headers. The default is 'false.'"
-        },
-        {
-            "name": "wrapText",
-            "type": "enum",
-            "label": "Enable Wrap Text",
-            "values": [
-                "false",
-                "true"
-            ],
-            "description": "Enable or disable text wrapping for the entire workbook. The default is 'false.'"
+        "spreadsheetId": {
+          "type": "string",
+          "description": "The ID of the Google Sheet (not needed if action=create)"
         }
-    ],
-    "overviewMarkdown": "# **Excel Generator**\n\nThis plugin enables users to generate Excel files (.xlsx) quickly and efficiently.\n\n### 🎯 **It Supports**\n- **Multiple Sheets:** Create and organize data across multiple sheets in a single workbook.\n- **Multiple Tables per Sheet:** Add multiple tables with independent configurations to each sheet.\n- **Formula Columns:** Define and apply formulas using Excel's syntax (e.g., `=SUM(A1:A10)`).\n- **Auto Filtering Mode**: Enable or disable automatic filtering on table columns.\n- **Customizable Headers:** Option to include or skip headers for tables, ensuring flexibility in design.\n- **Dynamic Cell Range:** Specify starting cells for tables to ensure accurate placement.\n- Ability to **customize basic excel attributes**  \n    - Choose font family.\n    - Adjust font size for text, table titles, and headers.\n    - Set border styles (thin, double, dashed, thick).\n    - Enable options for column width fitting, auto filtering, and text wrapping.\n\n### 📝 **Note:** \n- A plugin server must be set up to use this feature. Follow the detailed guide to set up a plugin server on Render: [How to Deploy Plugins Server on Render](https://docs.typingmind.com/plugins/plugins-server/how-to-deploy-plugins-server-on-render)\n- The generated Excel files will be automatically removed after one hour.\n- The plugin currently does not support adding graphs or embedding images in Excel files.\n\n## **Example Usage**  \n>Please generate an Excel file for a gradebook. The gradebook should include the following columns:\n> 1. Student Name\n> 2. Student ID\n> 3. Assignment 1 Score\n> 4. Assignment 2 Score\n> 5. Midterm Exam Score\n> 6. Final Exam Score\n> 7. Total Score (calculated as the weighted average of assignments, midterm, and final exam)\n> 8. Letter Grade (based on total score)\n>\n>The total score should be calculated with the following weights:\n> * Assignments: 40% (20% for Assignment 1 and 20% for Assignment 2)\n> * Midterm Exam: 30%\n> * Final Exam: 30%\n>\n>The letter grade should be assigned based on the total score:\n>* A: 90% or higher\n>* B: 80%–89%\n>* C: 70%–79%\n>* D: 60%–69%\n>* F: Below 60%",
-    "authenticationType": "AUTH_TYPE_NONE",
-    "implementationType": "http"
+      }
+    },
+    "description": "Interact with Google Sheets using OAuth2.0 authentication"
+  },
+  "outputType": "respond_to_ai",
+  "oauthConfig": {
+    "prompt": "consent",
+    "scopes": "openid profile email https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets",
+    "tokenURL": "https://oauth2.googleapis.com/token",
+    "accessType": "offline",
+    "contentType": "json",
+    "authorizationURL": "https://accounts.google.com/o/oauth2/v2/auth"
+  },
+  "userSettings": [
+    {
+      "name": "OAUTH_CLIENT_ID",
+      "label": "OAuth Client ID",
+      "required": true,
+      "description": "Your Google OAuth 2.0 Client ID"
+    },
+    {
+      "name": "OAUTH_CLIENT_SECRET",
+      "type": "password",
+      "label": "OAuth Client Secret",
+      "required": true,
+      "description": "Your Google OAuth 2.0 Client Secret"
+    },
+    {
+      "name": "OAUTH_REDIRECT_URI",
+      "label": "OAuth Redirect URI",
+      "required": true,
+      "description": "The redirect URI configured in your Google Cloud OAuth2 credentials"
+    }
+  ],
+  "isServerPlugin": true,
+  "overviewMarkdown": "## Google Sheets Plugin\n\nRead, update, or create Google Sheets using OAuth2 authentication.",
+  "turnedOnByDefault": true,
+  "authenticationType": "AUTH_TYPE_OAUTH",
+  "implementationType": "javascript",
+  "dynamicContextEndpoints": [],
+  "sharedOAuthConnectionID": null
 }
+
