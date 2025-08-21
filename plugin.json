@@ -1,6 +1,6 @@
 {
   "id": "googlesheet_plugin_001",
-  "code": "async function googlesheet_plugin_001({ spreadsheetId, range, values, title, action }, context) {\n  // No need to get the token from context; the placeholder is used directly.\n\n  if (action === 'read') {\n    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`, {\n      headers: {\n        // TypingMind will replace this placeholder with the user's actual access token.\n        Authorization: 'Bearer {{OAUTH_PLUGIN_ACCESS_TOKEN}}'\n      }\n    });\n    return await res.json();\n\n  } else if (action === 'write') {\n    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`, {\n      method: 'PUT',\n      headers: {\n        // Placeholder is used here as well.\n        Authorization: 'Bearer {{OAUTH_PLUGIN_ACCESS_TOKEN}}',\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({ values })\n    });\n    return await res.json();\n\n  } else if (action === 'create') {\n    if (!title) throw new Error('Missing title for new spreadsheet');\n    const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {\n      method: 'POST',\n      headers: {\n        // And here for creating a new sheet.\n        Authorization: 'Bearer {{OAUTH_PLUGIN_ACCESS_TOKEN}}',\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({ properties: { title } })\n    });\n    return await res.json();\n\n  } else {\n    throw new Error('Invalid action. Use \"read\", \"write\", or \"create\"');\n  }\n}",
+  "code": "async function googlesheet_plugin_001({ spreadsheetId, range, values, title, action }, context) {\n  if (action === 'read') {\n    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`, {\n      headers: {\n        Authorization: 'Bearer {{OAUTH_PLUGIN_ACCESS_TOKEN}}'\n      }\n    });\n    return await res.json();\n\n  } else if (action === 'write') {\n    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`, {\n      method: 'PUT',\n      headers: {\n        Authorization: 'Bearer {{OAUTH_PLUGIN_ACCESS_TOKEN}}',\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({ values })\n    });\n    return await res.json();\n\n  } else if (action === 'create') {\n    if (!title) throw new Error('Missing title for new spreadsheet');\n    const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {\n      method: 'POST',\n      headers: {\n        Authorization: 'Bearer {{OAUTH_PLUGIN_ACCESS_TOKEN}}',\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({ properties: { title } })\n    });\n    return await res.json();\n\n  } else {\n    throw new Error('Invalid action. Use \"read\", \"write\", or \"create\"');\n  }\n}",
   "icon": "https://www.gstatic.com/images/branding/product/1x/sheets_48dp.png",
   "uuid": "a312bac6-10f1-4555-a06b-37dedaff603b",
   "emoji": "🧩",
@@ -14,9 +14,7 @@
     "name": "googlesheet_plugin_001",
     "parameters": {
       "type": "object",
-      "required": [
-        "action"
-      ],
+      "required": ["action"],
       "properties": {
         "range": {
           "type": "string",
@@ -27,11 +25,7 @@
           "description": "Title of the new spreadsheet (required if action=create)"
         },
         "action": {
-          "enum": [
-            "read",
-            "write",
-            "create"
-          ],
+          "enum": ["read", "write", "create"],
           "type": "string",
           "description": "Whether to read, write, or create a sheet"
         },
@@ -39,9 +33,7 @@
           "type": "array",
           "items": {
             "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "items": { "type": "string" }
           },
           "description": "2D array of values to update (required if writing data)"
         },
