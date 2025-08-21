@@ -1,0 +1,29 @@
+{
+  "name": "googlesheet-plugin",
+  "version": "1.0.0",
+  "description": "A TypingMind plugin to integrate with Google Sheets",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"No test specified\" && exit 0"
+  },
+  "keywords": [
+    "google-sheets",
+    "typingmind",
+    "plugin",
+    "api"
+  ],
+  "author": "Naomi Kwamboka Onyancha",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "googleapis": "^156.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
