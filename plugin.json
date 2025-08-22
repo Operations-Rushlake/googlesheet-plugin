@@ -1,18 +1,49 @@
 {
-  "schema_version": "v1",
-  "name_for_model": "pdf_generator_selfhosted",
-  "name_for_human": "PDF Generator (Self-Hosted)",
-  "description_for_model": "A plugin that generates a PDF document from provided text content. It runs on a dedicated server and returns the generated PDF as a Base64 encoded string, which can be presented to the user as a downloadable file.",
-  "description_for_human": "Create a high-quality PDF document from plain text using a dedicated server.",
-  "auth": {
-    "type": "none"
+  "id": "pdf_generator_bridge_plugin_001",
+  "code": "async function pdf_generator_bridge_plugin_001({ content, filename, title, author }, context) {\n const YOUR_SERVER_URL = 'https://googlesheet-plugin.onrender.com'; // IMPORTANT: Use your live Render URL here\n\n if (!content || !filename) {\n throw new Error('Missing required fields: content and filename.');\n }\n\n try {\n const response = await fetch(`${YOUR_SERVER_URL}/generate-pdf`, {\n method: 'POST',\n headers: {\n 'Content-Type': 'application/json'\n },\n body: JSON.stringify({ content, filename, title, author })\n });\n\n if (!response.ok) {\n const errorData = await response.json();\n throw new Error(`API Server Error: ${response.status} - ${errorData.error || 'Unknown error'}`);\n }\n\n const result = await response.json();\n return result; // This will return the { filename, base64Data, message } object from your server\n\n } catch (error) {\n console.error('Error calling the PDF server:', error);\n throw new Error(`Failed to communicate with the PDF generation server: ${error.message}`);\n }\n}",
+  "icon": "https://cdn-icons-png.flaticon.com/512/888/888846.png",
+  "uuid": "d634e3e8-42b4-5a6c-a99d-68ff02c345f1",
+  "emoji": "📄",
+  "title": "PDF Generator (via Server)",
+  "system": false,
+  "iconURL": "https://cdn-icons-png.flaticon.com/512/888/888846.png",
+  "disabled": false,
+  "openaiSpec": {
+    "name": "pdf_generator_bridge_plugin_001",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "content",
+        "filename"
+      ],
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "The text content to be written into the PDF. Use '\\n' for new lines."
+        },
+        "filename": {
+          "type": "string",
+          "description": "The desired filename for the output PDF (e.g., 'report.pdf')."
+        },
+        "title": {
+          "type": "string",
+          "description": "Optional metadata title for the PDF document."
+        },
+        "author": {
+          "type": "string",
+          "description": "Optional metadata author for the PDF document."
+        }
+      }
+    },
+    "description": "Generates a PDF by calling a self-hosted server. Returns the PDF as Base64 data."
   },
-  "api": {
-    "type": "openapi",
-    "url": "https://googlesheet-plugin.onrender.com/openapi.yaml",
-    "is_user_authenticated": false
-  },
-  "logo_url": "https://raw.githubusercontent.com/pdfkit/pdfkit/master/examples/browser/images/logo.png",
-  "contact_email": "support@example.com",
-  "legal_info_url": "http://www.example.com/legal"
+  "outputType": "respond_to_ai",
+  "oauthConfig": null,
+  "userSettings": [],
+  "isServerPlugin": true,
+  "overviewMarkdown": "## PDF Generator (Self-Hosted)\n\nThis plugin acts as a bridge to a dedicated server that handles the complex task of PDF generation.",
+  "turnedOnByDefault": true,
+  "authenticationType": "AUTH_TYPE_NONE",
+  "implementationType": "javascript"
 }
+
