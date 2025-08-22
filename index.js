@@ -1,7 +1,7 @@
-// index.js (Final Multi-Function Version)
+// index.js (Final Multi-Function Version with correct ES Module imports)
 import express from 'express';
 import cors from 'cors';
-import PDFDocument from 'pdfkit'; // For Creating
+import PDFDocument from 'pdfkit';      // For Creating
 import pdf from 'pdf-parse';      // For Reading
 import { PDFDocument as PDFLibDocument } from 'pdf-lib'; // For Editing
 
@@ -16,12 +16,12 @@ app.post('/generate-pdf', (req, res) => {
     if (!content || !filename) {
       return res.status(400).json({ error: 'Missing required fields: content and filename.' });
     }
-    const doc = new PDFDocument({ size: 'A4', info: { Title: title, Author: author } });
+    const doc = new PDFDocument({ size: 'A4', info: { Title: title || 'Generated Document', Author: author || 'PDF Generator' } });
     const chunks = [];
     doc.on('data', (chunk) => chunks.push(chunk));
     doc.on('end', () => {
       const pdfBuffer = Buffer.concat(chunks);
-      res.status(200).json({ filename, base64Data: pdfBuffer.toString('base64') });
+      res.status(200).json({ filename: filename.endsWith('.pdf') ? filename : `${filename}.pdf`, base64Data: pdfBuffer.toString('base64') });
     });
     doc.fontSize(12).text(content, { align: 'left' });
     doc.end();
@@ -40,8 +40,9 @@ app.post('/read-pdf', async (req, res) => {
     }
     const buffer = Buffer.from(base64Data, 'base64');
     const data = await pdf(buffer);
-    res.status(200).json({ textContent: data.text, numPages: data.numpages });
-  } catch (error) {
+    res.status(200).json({ textContent: data.text, numPages: data.numpages, info: data.info });
+  } catch (error)
+  {
     console.error('Error reading PDF:', error);
     res.status(500).json({ error: 'Internal Server Error during PDF reading.' });
   }
@@ -51,22 +52,21 @@ app.post('/read-pdf', async (req, res) => {
 app.post('/edit-pdf', async (req, res) => {
   try {
     const { base64Data, textToAdd, pageNumber, xPosition, yPosition } = req.body;
-    if (!base64Data || !textToAdd || !pageNumber) {
+    if (!base64Data || !textToAdd || pageNumber === undefined) {
       return res.status(400).json({ error: 'Missing required fields: base64Data, textToAdd, and pageNumber.' });
     }
     const pdfBuffer = Buffer.from(base64Data, 'base64');
     const pdfDoc = await PDFLibDocument.load(pdfBuffer);
     const pages = pdfDoc.getPages();
-    const pageIndex = pageNumber - 1; // Convert from 1-based to 0-based index
+    const pageIndex = pageNumber - 1;
 
     if (pageIndex < 0 || pageIndex >= pages.length) {
       return res.status(400).json({ error: `Invalid page number. Document has ${pages.length} pages.` });
     }
     const page = pages[pageIndex];
     
-    // Y-coordinate in pdf-lib is from the bottom of the page, so we adjust
     const { height } = page.getSize();
-    const finalY = height - (yPosition || 50); // Default to 50 from top if not provided
+    const finalY = height - (yPosition || 50);
 
     page.drawText(textToAdd, { x: xPosition || 50, y: finalY, size: 12 });
     
@@ -82,4 +82,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Multi-function PDF server running on port ${PORT}`);
 });
-
