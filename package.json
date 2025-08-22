@@ -5,26 +5,15 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "test": "echo \"No test specified\" && exit 0"
+    "start": "node index.js"
   },
-  "keywords": [
-    "pdf",
-    "typingmind",
-    "plugin",
-    "api"
-  ],
   "author": "Naomi Kwamboka Onyancha",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "pdf-lib": "^1.17.1",
-    "pdf-parse": "1.1.1",
+    "pdfjs-dist": "^4.5.136",
     "pdfkit": "^0.15.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.4"
   }
 }
