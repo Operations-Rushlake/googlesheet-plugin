@@ -1,16 +1,23 @@
-const express = require('express');
-const PDFDocument = require('pdfkit');
-const cors = require('cors');
+// index.js (ES Module Syntax)
+import express from 'express';
+import PDFDocument from 'pdfkit';
+import cors from 'cors';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Recreate __dirname for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
-app.use(express.json({ limit: '1000mb' })); // Increase limit for larger content
+app.use(express.json({ limit: '5mb' }));
 app.use(cors());
 
 // Serve the ai-plugin.json from the standard .well-known directory
-app.use('/.well-known', express.static('.well-known'));
+app.use('/.well-known', express.static(join(__dirname, '.well-known')));
 
 // Serve the openapi.yaml from a public directory
-app.use(express.static('public'));
+app.use(express.static(join(__dirname, 'public')));
 
 
 // The API endpoint that generates the PDF
@@ -30,12 +37,10 @@ app.post('/generate-pdf', (req, res) => {
       },
     });
 
-    // We will collect the PDF data in memory as a buffer
     const chunks = [];
     doc.on('data', (chunk) => chunks.push(chunk));
     doc.on('end', () => {
       const pdfBuffer = Buffer.concat(chunks);
-      // Return the PDF as Base64 encoded data, which is a standard for APIs
       const base64Data = pdfBuffer.toString('base64');
       
       res.status(200).json({
@@ -45,12 +50,10 @@ app.post('/generate-pdf', (req, res) => {
       });
     });
 
-    // Add content to the document with basic margins
     doc.fontSize(12).text(content, 100, 100, {
       align: 'left',
     });
 
-    // Finalize the PDF and trigger the 'end' event
     doc.end();
 
   } catch (error) {
@@ -64,3 +67,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`PDF Generator plugin server running on port ${PORT}`);
 });
+
