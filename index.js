@@ -1,18 +1,15 @@
-// index.js (Final Version using modern pdfjs-dist library)
+// index.js (Corrected Version)
 import express from 'express';
 import cors from 'cors';
-import PDFDocument from 'pdfkit';      // For Creating
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'; // For Reading (Modern)
-import { PDFDocument as PDFLibDocument } from 'pdf-lib'; // For Editing
-
-// Required worker for pdfjs-dist in Node.js environment
-pdfjsLib.GlobalWorkerOptions.workerSrc = `../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs`;
+import PDFDocument from 'pdfkit';                      // For Creating (Correct)
+import pdf from 'pdf-parse';                           // For Reading (Replaced with a Node.js library)
+import { PDFDocument as PDFLibDocument } from 'pdf-lib'; // For Editing (Correct)
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(cors());
 
-// === 1. CREATE PDF ===
+// === 1. CREATE PDF (This code was already correct) ===
 app.post('/generate-pdf', (req, res) => {
   try {
     const { content, filename, title, author } = req.body;
@@ -33,31 +30,27 @@ app.post('/generate-pdf', (req, res) => {
   }
 });
 
-// === 2. READ PDF (Rewritten with pdfjs-dist) ===
+// === 2. READ PDF (Rewritten with pdf-parse) ===
 app.post('/read-pdf', async (req, res) => {
   try {
     const { base64Data } = req.body;
     if (!base64Data) return res.status(400).json({ error: 'Missing base64Data.' });
     
     const buffer = Buffer.from(base64Data, 'base64');
-    const pdfDocument = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const data = await pdf(buffer);
     
-    let fullText = '';
-    for (let i = 1; i <= pdfDocument.numPages; i++) {
-      const page = await pdfDocument.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map(item => item.str).join(' ');
-      fullText += pageText + '\\n\\n'; // Add space between pages
-    }
-    
-    res.status(200).json({ textContent: fullText.trim(), numPages: pdfDocument.numPages });
+    res.status(200).json({ 
+      textContent: data.text, 
+      numPages: data.numpages,
+      info: data.info // pdf-parse can also extract metadata
+    });
   } catch (error) {
     console.error('Error reading PDF:', error);
     res.status(500).json({ error: 'Internal Server Error during PDF reading.' });
   }
 });
 
-// === 3. WRITE (EDIT) PDF ===
+// === 3. WRITE (EDIT) PDF (This code was already correct) ===
 app.post('/edit-pdf', async (req, res) => {
   try {
     const { base64Data, textToAdd, pageNumber, xPosition, yPosition } = req.body;
