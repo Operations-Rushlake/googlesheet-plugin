@@ -13,10 +13,11 @@
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^4.5.136",
+    "pdf-parse": "^1.1.1",
     "pdfkit": "^0.15.0"
   },
   "engines": {
     "node": "18.x"
   }
 }
+
