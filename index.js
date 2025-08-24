@@ -37,9 +37,9 @@ function readPdfTextFromBuffer(buffer) {
   });
 }
 
-// === 1. CREATE PDF ===
-// This endpoint uses pdfkit to generate a new PDF from text.
+// === 1. CREATE PDF (Corrected, Robust Version) ===
 app.post('/generate-pdf', (req, res) => {
+  // We wrap the entire logic in a try...catch to handle any immediate synchronous errors.
   try {
     const { content, filename = 'document.pdf', title, author } = req.body;
     if (!content) {
@@ -47,25 +47,45 @@ app.post('/generate-pdf', (req, res) => {
     }
     
     const doc = new PDFDocument({ size: 'A4', info: { Title: title, Author: author } });
-    
     const chunks = [];
+
+    // Listen for data chunks
     doc.on('data', (chunk) => chunks.push(chunk));
+
+    // Listen for the end of the stream
     doc.on('end', () => {
       const pdfBuffer = Buffer.concat(chunks);
-      // Respond with the filename and the PDF data encoded in base64
-      res.status(200).json({ 
-        filename: filename.endsWith('.pdf') ? filename : `${filename}.pdf`, 
-        base64Data: pdfBuffer.toString('base64') 
-      });
+      // Ensure we don't try to send a response if an error has already occurred
+      if (!res.headersSent) {
+        res.status(200).json({ 
+          filename: filename.endsWith('.pdf') ? filename : `${filename}.pdf`, 
+          base64Data: pdfBuffer.toString('base64') 
+        });
+      }
     });
 
+    // CRITICAL: Listen for errors on the stream
+    doc.on('error', (err) => {
+      console.error('CRITICAL: PDF stream generation failed:', err);
+      // Ensure we don't try to send a response if one has already been sent
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Internal Server Error during PDF generation.' });
+      }
+    });
+
+    // Write content to the PDF
     doc.fontSize(12).text(content, { align: 'left' });
+    
+    // Finalize the PDF. This triggers the 'end' or 'error' event.
     doc.end();
+
   } catch (error) {
-    console.error('Error in /generate-pdf:', error);
-    res.status(500).json({ error: 'Internal Server Error during PDF generation.' });
+    // This will catch synchronous errors (e.g., if req.body is malformed)
+    console.error('Synchronous error in /generate-pdf:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal Server Error during PDF generation.' });
+    }
   }
-});
 
 // === 2. READ PDF ===
 // This endpoint uses pdfreader to extract text from an existing PDF.
