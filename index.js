@@ -1,4 +1,4 @@
-// index.js (Final Architecture: Buffer-First Write for 100% Reliability)
+// index.js (Final Version with File Extension Fix)
 
 import express from 'express';
 import cors from 'cors';
@@ -16,14 +16,12 @@ const app = express();
 app.use(express.json({ limit: '20mb' }));
 app.use(cors());
 
-// --- Setup Temporary File Storage ---
 const tempDir = path.join(os.tmpdir(), 'pdf-plugin-files');
 if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true });
 }
 console.log(`Temporary file directory set to: ${tempDir}`);
 
-// --- Helper Function for File Cleanup ---
 function scheduleFileCleanup(filePath, fileId) {
   setTimeout(() => {
     fs.unlink(filePath, (err) => {
@@ -38,7 +36,6 @@ function scheduleFileCleanup(filePath, fileId) {
   }, 300000); // 5 minutes
 }
 
-// === DOWNLOAD ENDPOINT (No changes needed) ===
 app.get('/download/:fileId/:filename', (req, res) => {
   try {
     const { fileId, filename } = req.params;
@@ -60,7 +57,7 @@ app.get('/download/:fileId/:filename', (req, res) => {
   }
 });
 
-// === 1. CREATE PDF (Rewritten to be 100% reliable) ===
+// === 1. CREATE PDF ===
 app.post('/generate-pdf', (req, res) => {
   try {
     const { content, filename = 'document.pdf', title, author } = req.body;
@@ -76,17 +73,17 @@ app.post('/generate-pdf', (req, res) => {
     const chunks = [];
     doc.on('data', (chunk) => chunks.push(chunk));
     
-    // This event fires when the PDF is fully generated IN MEMORY.
     doc.on('end', () => {
       const pdfBuffer = Buffer.concat(chunks);
       const fileId = `${uuidv4()}.pdf`;
       const filePath = path.join(tempDir, fileId);
 
-      // Write the complete buffer to disk in one atomic operation.
       fs.writeFileSync(filePath, pdfBuffer);
 
-      // Now that we know the file is 100% written, we send the link.
-      const downloadUrl = `https://googlesheet-plugin.onrender.com/download/${fileId}/${encodeURIComponent(filename)}`;
+      // *** FIX *** Ensure the filename has a .pdf extension
+      const finalFilename = filename.toLowerCase().endsWith('.pdf') ? filename : `${filename}.pdf`;
+      const downloadUrl = `https://googlesheet-plugin.onrender.com/download/${fileId}/${encodeURIComponent(finalFilename)}`;
+      
       res.status(200).json({ downloadUrl });
       scheduleFileCleanup(filePath, fileId);
     });
@@ -104,7 +101,7 @@ app.post('/generate-pdf', (req, res) => {
   }
 });
 
-// === 2. READ PDF (No changes needed) ===
+// === 2. READ PDF ===
 function readPdfTextFromBuffer(buffer) {
     return new Promise((resolve, reject) => {
       const reader = new PdfReader();
@@ -129,7 +126,7 @@ app.post('/read-pdf', async (req, res) => {
   }
 });
 
-// === 3. EDIT PDF (Updated to be 100% reliable) ===
+// === 3. EDIT PDF ===
 app.post('/edit-pdf', async (req, res) => {
   try {
     const { base64Data, textToAdd, pageNumber, xPosition, yPosition, filename = 'edited-document.pdf' } = req.body;
@@ -155,11 +152,13 @@ app.post('/edit-pdf', async (req, res) => {
     const filePath = path.join(tempDir, fileId);
     fs.writeFileSync(filePath, modifiedPdfBytes);
 
-    const downloadUrl = `https://googlesheet-plugin.onrender.com/download/${fileId}/${encodeURIComponent(filename)}`;
+    // *** FIX *** Ensure the filename has a .pdf extension
+    const finalFilename = filename.toLowerCase().endsWith('.pdf') ? filename : `${filename}.pdf`;
+    const downloadUrl = `https://googlesheet-plugin.onrender.com/download/${fileId}/${encodeURIComponent(finalFilename)}`;
+
     res.status(200).json({ downloadUrl });
     scheduleFileCleanup(filePath, fileId);
-  } catch (error)
- {
+  } catch (error) {
     console.error('Error in /edit-pdf:', error);
     res.status(500).json({ error: 'Internal Server Error during PDF editing.' });
   }
@@ -167,5 +166,5 @@ app.post('/edit-pdf', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`PDF Plugin Server [Buffer-First Write Version] running on port ${PORT}`);
+  console.log(`PDF Plugin Server [Final Version] running on port ${PORT}`);
 });
